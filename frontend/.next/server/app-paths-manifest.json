@@ -1,6 +1,4 @@
 {
-  "/not-found": "app/not-found.js",
-  "/invoices/page": "app/invoices/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/auth/callback/page": "app/auth/callback/page.js"
+  "/invoices/page": "app/invoices/page.js"
 }

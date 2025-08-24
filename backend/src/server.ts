@@ -46,7 +46,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'https://ehopn-test-project.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -146,7 +146,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(` Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`Health check: https://ehopn-test-project.onrender.com/health`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
