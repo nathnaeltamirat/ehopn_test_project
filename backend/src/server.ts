@@ -6,8 +6,9 @@ import path from 'path';
 import dotenv from 'dotenv';
 import session from 'express-session';
 import multer from 'multer';
+import fs from 'fs';
 
-const envPath = path.join(__dirname, '../.env');
+const envPath = path.join(process.cwd(), '.env');
 console.log('🔍 Looking for .env file at:', envPath);
 dotenv.config({ path: envPath });
 
@@ -73,7 +74,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/subscription/webhook', express.raw({ type: 'application/json' }));
 
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 
 app.get('/health', (req, res) => {
@@ -136,8 +137,7 @@ const startServer = async () => {
 
     await connectDB();
 
-    const fs = require('fs');
-    const uploadsDir = path.join(__dirname, '../uploads');
+    const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }

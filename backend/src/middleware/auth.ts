@@ -11,7 +11,7 @@ export interface JWTPayload {
 
 export const auth = async (req: IAuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = (req as any).header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
       res.status(401).json({

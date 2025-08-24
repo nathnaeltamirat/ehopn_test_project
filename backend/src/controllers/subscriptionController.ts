@@ -194,7 +194,7 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
 
     console.log('Creating Chapa payment with payload:', JSON.stringify(chapaPayload, null, 2));
     
-    const chapaResponse = await fetch(`${CHAPA_BASE_URL}/transaction/initialize`, {
+    const chapaResponse = await (globalThis as any).fetch(`${CHAPA_BASE_URL}/transaction/initialize`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${CHAPA_SECRET_KEY}`,
@@ -273,7 +273,7 @@ export const verifyChapaPayment = async (req: any, res: Response): Promise<void>
     }
 
 
-    const chapaResponse = await fetch(`${CHAPA_BASE_URL}/transaction/verify/${txRef}`, {
+    const chapaResponse = await (globalThis as any).fetch(`${CHAPA_BASE_URL}/transaction/verify/${txRef}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${CHAPA_SECRET_KEY}`
