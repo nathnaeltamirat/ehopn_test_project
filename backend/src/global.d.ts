@@ -1,0 +1,11 @@
+declare module 'babel__generator';
+declare module 'babel__template';
+declare module 'body-parser';
+declare module 'istanbul-lib-report';
+declare module 'ms';
+declare module 'qs';
+declare module 'range-parser';
+declare module 'send';
+declare module 'serve-static';
+declare module 'webidl-conversions';
+declare module 'yargs-parser';

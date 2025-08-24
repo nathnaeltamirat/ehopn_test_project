@@ -1,0 +1,60 @@
+{
+    "name": "ehopn-backend",
+    "version": "1.0.0",
+    "description": "Express.js backend with TypeScript and MongoDB for EHopN invoice management",
+    "main": "dist/server.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/server.js",
+        "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+        "test": "jest"
+    },
+    "keywords": [
+        "express",
+        "typescript",
+        "mongodb",
+        "mongoose",
+        "jwt",
+        "chapa",
+        "ethiopia"
+    ],
+    "author": "EHopN Team",
+    "license": "MIT",
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "@types/nodemailer": "^7.0.1",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "express-rate-limit": "^7.1.5",
+        "express-session": "^1.18.2",
+        "express-validator": "^7.0.1",
+        "helmet": "^7.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.0.3",
+        "multer": "^1.4.5-lts.1",
+        "nodemailer": "^7.0.5",
+        "passport": "^0.7.0",
+        "passport-google-oauth20": "^2.0.0",
+        "pdf-lib": "^1.17.1",
+        "pdf-parse": "^1.1.1",
+        "tesseract.js": "^6.0.1"
+    },
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^4.17.21",
+        "@types/express-session": "^1.18.2",
+        "@types/jest": "^29.5.8",
+        "@types/jsonwebtoken": "^9.0.5",
+        "@types/multer": "^1.4.11",
+        "@types/node": "^20.10.4",
+        "@types/passport": "^1.0.17",
+        "@types/pdf-parse": "^1.1.5",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.1.1",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.3.3"
+    }
+}
