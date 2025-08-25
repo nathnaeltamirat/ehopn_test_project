@@ -5,10 +5,12 @@ const bcrypt = require('bcryptjs');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const backendUrl = process.env.BACKEND_URL || 'https://ehopn-test-project.onrender.com';
 
 console.log('🔍 Debug: Checking Google OAuth credentials...');
 console.log('🔍 GOOGLE_CLIENT_ID:', googleClientId ? '✅ Set' : '❌ Not set');
 console.log('🔍 GOOGLE_CLIENT_SECRET:', googleClientSecret ? '✅ Set' : '❌ Not set');
+console.log('🔍 BACKEND_URL:', backendUrl);
 
 if (!googleClientId || !googleClientSecret) {
   console.warn('⚠️  Google OAuth credentials not found. Google OAuth will be disabled.');
@@ -20,7 +22,7 @@ if (!googleClientId || !googleClientSecret) {
       {
         clientID: googleClientId,
         clientSecret: googleClientSecret,
-        callbackURL: '/auth/google/callback',
+        callbackURL: `${backendUrl}/api/auth/google/callback`,
         scope: ['profile', 'email']
       },
       async (accessToken, refreshToken, profile, done) => {
