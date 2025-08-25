@@ -167,7 +167,7 @@ const createChapaPayment = async (req, res) => {
       tx_ref: txRef,
       callback_url: callbackUrl,
       return_url: callbackUrl, 
-      webhook_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/subscription/webhook`,
+      webhook_url: `${process.env.BACKEND_URL || 'https://ehopn-test-project.onrender.com'}/api/subscription/webhook`,
       customization: {
         title: `${plan.name} Plan`,
         description: plan.description

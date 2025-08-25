@@ -130,5 +130,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+  console.log(`🔗 Health check: ${backendUrl}/health`);
 });
