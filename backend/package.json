@@ -4,7 +4,7 @@
     "description": "Express.js backend with TypeScript and MongoDB for EHopN invoice management",
     "main": "dist/server.js",
     "scripts": {
-        "build": "tsc",
+        "build": "node build.js",
         "start": "node dist/server.js",
         "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
         "test": "jest"
