@@ -6,7 +6,7 @@ const createTransporter = () => {
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
+      pass: process.env.EMAIL_PASSWORDWORD
     }
   });
 };
@@ -14,7 +14,7 @@ const createTransporter = () => {
 // Send welcome email
 const sendWelcomeEmail = async (email, name) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('Email credentials not configured. Skipping welcome email.');
       return { success: true, message: 'Email service not configured' };
     }
@@ -54,7 +54,7 @@ const sendWelcomeEmail = async (email, name) => {
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken, name) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('Email credentials not configured. Skipping password reset email.');
       return { success: true, message: 'Email service not configured' };
     }
@@ -94,7 +94,7 @@ const sendPasswordResetEmail = async (email, resetToken, name) => {
 // Send subscription confirmation email
 const sendSubscriptionEmail = async (email, name, planName) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('Email credentials not configured. Skipping subscription email.');
       return { success: true, message: 'Email service not configured' };
     }
