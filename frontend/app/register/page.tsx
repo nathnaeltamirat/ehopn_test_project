@@ -72,8 +72,8 @@ export default function RegisterPage() {
 
     try {
       // Redirect to backend Google OAuth endpoint
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-      window.location.href = `${backendUrl}/auth/google`
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ehopn-test-project.onrender.com'
+      window.location.href = `${backendUrl}/api/auth/google`
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || t('auth.networkError') })
       setIsLoading(false)
