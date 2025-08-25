@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { register, login, logout, getCurrentUser, googleAuthCallback, forgotPassword, resetPassword } from '../controllers/authController';
-import { validateRegister, validateLogin } from '../middleware/validation';
+
 import { auth } from '../middleware/auth';
 
 const router = Router();
 
-router.post('/register', validateRegister, register);
-router.post('/login', validateLogin, login);
+router.post('/register', register);
+router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', auth as any, getCurrentUser);
 router.post('/forgot-password', forgotPassword)

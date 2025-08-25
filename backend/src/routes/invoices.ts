@@ -8,7 +8,7 @@ import {
   deleteInvoice,
   createInvoice
 } from '../controllers/invoiceController';
-import { validateInvoice } from '../middleware/validation';
+
 import { auth } from '../middleware/auth';
 
 const router = Router();
@@ -16,7 +16,7 @@ const router = Router();
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: any, file: any, cb: any) => {
 
   const allowedMimeTypes = [
     'application/pdf',
@@ -46,12 +46,12 @@ router.use(auth as any);
 
 router.get('/', getInvoices);
 
-router.post('/', validateInvoice, createInvoice);
+router.post('/', createInvoice);
 
 
 router.post('/upload', upload.single('file'), uploadInvoice);
 
-router.put('/:id', validateInvoice, updateInvoice);
+router.put('/:id', updateInvoice);
 
 router.delete('/:id', deleteInvoice);
 

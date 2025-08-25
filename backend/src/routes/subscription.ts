@@ -8,7 +8,7 @@ import {
   createChapaPayment,
   verifyChapaPayment
 } from '../controllers/subscriptionController';
-import { validateSubscription } from '../middleware/validation';
+
 import { auth } from '../middleware/auth';
 
 const router = Router();
@@ -16,7 +16,7 @@ const router = Router();
 router.get('/plans', getSubscriptionPlans);
 router.post('/chapa-payment', auth as any, createChapaPayment);
 router.post('/verify-payment', auth as any, verifyChapaPayment);
-router.post('/create', auth as any, validateSubscription, createSubscription);
+router.post('/create', auth as any, createSubscription);
 router.get('/me', auth as any, getCurrentSubscription);
 router.post('/cancel', auth as any, cancelSubscription);
 router.post('/webhook', handleChapaWebhook);
