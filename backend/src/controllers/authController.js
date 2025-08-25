@@ -1,13 +1,10 @@
-import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import { User } from '../models/User';
-import { Subscription } from '../models/Subscription';
-import { IAuthRequest, IUserResponse, IAuthResponse } from '../types';
-import { JWTPayload } from '../middleware/auth';
-import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/emailService';
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { User } = require('../models/User');
+const { Subscription } = require('../models/Subscription');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/emailService');
 
-export const register = async (req: Request, res: Response): Promise<void> => {
+const register = async (req, res) => {
   try {
     const { name, email, password, language } = req.body;
     const existingUser = await User.findOne({ email });
@@ -40,19 +37,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     await subscription.save();
 
-
-    const payload: JWTPayload = {
+    const payload = {
       userId: user._id.toString(),
       email: user.email,
       role: user.role
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
 
-  
-    const userResponse: IUserResponse = {
+    const userResponse = {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
@@ -64,7 +59,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       console.error('Failed to send welcome email:', error);
     });
 
-    const response: IAuthResponse = {
+    const response = {
       success: true,
       message: 'User registered successfully',
       token,
@@ -81,7 +76,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -94,7 +89,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       res.status(401).json({
@@ -104,19 +98,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
- 
-    const payload: JWTPayload = {
+    const payload = {
       userId: user._id.toString(),
       email: user.email,
       role: user.role
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
 
-   
-    const userResponse: IUserResponse = {
+    const userResponse = {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
@@ -124,7 +116,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       subscriptionPlan: user.subscriptionPlan
     };
 
-    const response: IAuthResponse = {
+    const response = {
       success: true,
       message: 'Login successful',
       token,
@@ -141,7 +133,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const logout = async (req: Request, res: Response): Promise<void> => {
+const logout = async (req, res) => {
   try {
     res.json({
       success: true,
@@ -156,7 +148,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const getCurrentUser = async (req: any, res: Response): Promise<void> => {
+const getCurrentUser = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -165,7 +157,7 @@ export const getCurrentUser = async (req: any, res: Response): Promise<void> => 
       });
       return;
     }
-    const userResponse: IUserResponse = {
+    const userResponse = {
       id: req.user._id.toString(),
       name: req.user.name,
       email: req.user.email,
@@ -187,26 +179,24 @@ export const getCurrentUser = async (req: any, res: Response): Promise<void> => 
   }
 };
 
-export const googleAuthCallback = async (req: Request, res: Response): Promise<void> => {
+const googleAuthCallback = async (req, res) => {
   try {
-
-    const user = (req as any).user;
+    const user = req.user;
     
     if (!user) {
       res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
       return;
     }
 
-    const payload: JWTPayload = {
+    const payload = {
       userId: user._id.toString(),
       email: user.email,
       role: user.role
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
-
 
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}&success=true`);
   } catch (error) {
@@ -215,7 +205,7 @@ export const googleAuthCallback = async (req: Request, res: Response): Promise<v
   }
 };
 
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -227,10 +217,8 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      // For security reasons, don't reveal if the email exists or not
       res.json({
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent'
@@ -238,24 +226,20 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Generate reset token (valid for 1 hour)
     const resetToken = jwt.sign(
       { userId: user._id.toString(), email: user.email },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Store reset token in user document
     user.resetToken = resetToken;
-    user.resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    user.resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    // Send password reset email
     const emailResult = await sendPasswordResetEmail(email, resetToken, user.name);
     
     if (!emailResult.success) {
       console.error('Failed to send password reset email:', emailResult.error);
-      // Still return success to user for security reasons
     }
 
     res.json({
@@ -271,7 +255,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
 
@@ -291,10 +275,9 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verify and decode the token
-    let decoded: any;
+    let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
       res.status(400).json({
         success: false,
@@ -303,7 +286,6 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Find user by ID from token
     const user = await User.findById(decoded.userId);
     if (!user) {
       res.status(400).json({
@@ -313,7 +295,6 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Check if reset token matches and is not expired
     if (user.resetToken !== token || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
       res.status(400).json({
         success: false,
@@ -322,11 +303,9 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Hash the new password
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Update user's password and clear reset token
     user.passwordHash = passwordHash;
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
@@ -343,4 +322,14 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       message: 'Internal server error'
     });
   }
+};
+
+module.exports = {
+  register,
+  login,
+  logout,
+  getCurrentUser,
+  googleAuthCallback,
+  forgotPassword,
+  resetPassword
 };

@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
-export const connectDB = async (): Promise<void> => {
+const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI;
     
@@ -12,7 +12,6 @@ export const connectDB = async (): Promise<void> => {
     
     console.log('✅ MongoDB connected successfully');
     
-
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
     });
@@ -21,7 +20,6 @@ export const connectDB = async (): Promise<void> => {
       console.log('⚠️ MongoDB disconnected');
     });
 
-  
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
       console.log('MongoDB connection closed through app termination');
@@ -33,3 +31,5 @@ export const connectDB = async (): Promise<void> => {
     process.exit(1);
   }
 };
+
+module.exports = { connectDB };

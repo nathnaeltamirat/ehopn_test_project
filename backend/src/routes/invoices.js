@@ -1,23 +1,21 @@
-import { Router } from 'express';
-import multer from 'multer';
-import path from 'path';
-import { 
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const { 
   getInvoices, 
   uploadInvoice, 
   updateInvoice, 
   deleteInvoice,
   createInvoice
-} from '../controllers/invoiceController';
+} = require('../controllers/invoiceController');
+const { validateInvoice } = require('../middleware/validation');
+const { auth } = require('../middleware/auth');
 
-import { auth } from '../middleware/auth';
-
-const router = Router();
-
+const router = express.Router();
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (req: any, file: any, cb: any) => {
-
+const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
     'application/pdf',
     'image/jpeg',
@@ -42,17 +40,12 @@ const upload = multer({
   }
 });
 
-router.use(auth as any);
+router.use(auth);
 
 router.get('/', getInvoices);
-
-router.post('/', createInvoice);
-
-
+router.post('/', validateInvoice, createInvoice);
 router.post('/upload', upload.single('file'), uploadInvoice);
-
-router.put('/:id', updateInvoice);
-
+router.put('/:id', validateInvoice, updateInvoice);
 router.delete('/:id', deleteInvoice);
 
-export default router;
+module.exports = router;

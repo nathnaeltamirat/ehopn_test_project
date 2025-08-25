@@ -1,14 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { IInvoice } from '../types';
+const mongoose = require('mongoose');
 
-export interface IInvoiceDocument extends Omit<IInvoice, '_id'>, Document {
-  _id: any; 
-}
-
-
-const InvoiceSchema = new Schema<IInvoiceDocument>({
+const InvoiceSchema = new mongoose.Schema({
   userId: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'User ID is required']
   },
@@ -22,7 +16,7 @@ const InvoiceSchema = new Schema<IInvoiceDocument>({
     type: String,
     required: [true, 'Date is required'],
     validate: {
-      validator: function(v: string) {
+      validator: function(v) {
         return /^\d{4}-\d{2}-\d{2}$/.test(v);
       },
       message: 'Date must be in YYYY-MM-DD format'
@@ -32,7 +26,7 @@ const InvoiceSchema = new Schema<IInvoiceDocument>({
     type: String,
     required: [true, 'Amount is required'],
     validate: {
-      validator: function(v: string) {
+      validator: function(v) {
         return /^\d+(\.\d{1,2})?$/.test(v);
       },
       message: 'Amount must be a valid number with up to 2 decimal places'
@@ -66,4 +60,6 @@ InvoiceSchema.index({ userId: 1, createdAt: -1 });
 InvoiceSchema.index({ vendor: 1 });
 InvoiceSchema.index({ date: 1 });
 
-export const Invoice = mongoose.model<IInvoiceDocument>('Invoice', InvoiceSchema);
+const Invoice = mongoose.model('Invoice', InvoiceSchema);
+
+module.exports = { Invoice };

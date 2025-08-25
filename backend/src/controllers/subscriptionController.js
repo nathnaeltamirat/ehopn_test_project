@@ -1,12 +1,10 @@
-import { Request, Response } from 'express';
-import { User } from '../models/User';
-import { Subscription } from '../models/Subscription';
-import { IAuthRequest, ISubscriptionResponse, IApiResponse } from '../types';
-import { Invoice } from '../models/Invoice'; // Added import for Invoice
+const { User } = require('../models/User');
+const { Subscription } = require('../models/Subscription');
+const { Invoice } = require('../models/Invoice');
 
-const CHAPA_SECRET_KEY = process.env.CHAPA_SECRET_KEY!;
-const CHAPA_PUBLIC_KEY = process.env.CHAPA_PUBLIC_KEY!;
-const CHAPA_ENCRYPTION_KEY = process.env.CHAPA_ENCRYPTION_KEY!;
+const CHAPA_SECRET_KEY = process.env.CHAPA_SECRET_KEY;
+const CHAPA_PUBLIC_KEY = process.env.CHAPA_PUBLIC_KEY;
+const CHAPA_ENCRYPTION_KEY = process.env.CHAPA_ENCRYPTION_KEY;
 const CHAPA_BASE_URL = 'https://api.chapa.co/v1';
 
 const SUBSCRIPTION_PLANS = {
@@ -42,8 +40,7 @@ const SUBSCRIPTION_PLANS = {
   }
 };
 
-
-export const getSubscriptionPlans = async (req: Request, res: Response): Promise<void> => {
+const getSubscriptionPlans = async (req, res) => {
   try {
     const plans = Object.values(SUBSCRIPTION_PLANS).map(plan => ({
       id: plan.id,
@@ -56,7 +53,7 @@ export const getSubscriptionPlans = async (req: Request, res: Response): Promise
       description: plan.description
     }));
 
-    const response: IApiResponse<typeof plans> = {
+    const response = {
       success: true,
       message: 'Subscription plans retrieved successfully',
       data: plans
@@ -72,8 +69,7 @@ export const getSubscriptionPlans = async (req: Request, res: Response): Promise
   }
 };
 
-
-export const createChapaPayment = async (req: any, res: Response): Promise<void> => {
+const createChapaPayment = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -85,10 +81,9 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
 
     const { planId } = req.body;
 
- 
-    let planKey: keyof typeof SUBSCRIPTION_PLANS;
-    if (SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS]) {
-      planKey = planId as keyof typeof SUBSCRIPTION_PLANS;
+    let planKey;
+    if (SUBSCRIPTION_PLANS[planId]) {
+      planKey = planId;
     } else {
       const foundPlan = Object.entries(SUBSCRIPTION_PLANS).find(([key, plan]) => plan.id === planId);
       if (!foundPlan) {
@@ -98,21 +93,18 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
         });
         return;
       }
-      planKey = foundPlan[0] as keyof typeof SUBSCRIPTION_PLANS;
+      planKey = foundPlan[0];
     }
 
     const plan = SUBSCRIPTION_PLANS[planKey];
-
     
     if (planKey === 'Free') {
-     
       const existingSubscription = await Subscription.findOne({ userId: req.user._id });
       if (existingSubscription) {
         existingSubscription.plan = 'Free';
         existingSubscription.status = 'active';
         await existingSubscription.save();
       } else {
-     
         const subscription = new Subscription({
           userId: req.user._id,
           plan: 'Free',
@@ -121,10 +113,9 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
         await subscription.save();
       }
 
-
       await User.findByIdAndUpdate(req.user._id, { subscriptionPlan: 'Free' });
 
-      const response: IApiResponse<ISubscriptionResponse> = {
+      const response = {
         success: true,
         message: 'Free subscription activated successfully',
         data: {
@@ -135,15 +126,13 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
           amount: 0,
           currency: 'ETB',
           features: plan.features,
-
-        } as any
+        }
       };
 
       res.json(response);
       return;
     }
 
-    // Check if Chapa API key is configured
     if (!CHAPA_SECRET_KEY) {
       console.error('Chapa API key not configured properly');
       res.status(500).json({
@@ -154,7 +143,6 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
     }
 
     console.log('Using Chapa API key:', CHAPA_SECRET_KEY.substring(0, 10) + '...');
-
 
     const txRef = `chapa-${req.user._id}-${Date.now()}`; 
     
@@ -194,7 +182,7 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
 
     console.log('Creating Chapa payment with payload:', JSON.stringify(chapaPayload, null, 2));
     
-    const chapaResponse = await (globalThis as any).fetch(`${CHAPA_BASE_URL}/transaction/initialize`, {
+    const chapaResponse = await fetch(`${CHAPA_BASE_URL}/transaction/initialize`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${CHAPA_SECRET_KEY}`,
@@ -204,15 +192,15 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
     });
 
     console.log('Chapa response status:', chapaResponse.status);
-    const chapaData = await chapaResponse.json() as any; // Type assertion for now
+    const chapaData = await chapaResponse.json();
     console.log('Chapa response data:', JSON.stringify(chapaData, null, 2));
 
     if (chapaData.status === 'success') {
       let subscription = await Subscription.findOne({ userId: req.user._id });
       if (subscription) {
         subscription.plan = planKey;
-        subscription.status = 'pending'; // Set to pending until payment is confirmed
-        subscription.chapaTxRef = txRef; // Store Chapa transaction reference
+        subscription.status = 'pending';
+        subscription.chapaTxRef = txRef;
         await subscription.save();
       } else {
         subscription = new Subscription({
@@ -225,7 +213,7 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
         await subscription.save();
       }
 
-      const response: IApiResponse<{ checkoutUrl: string; txRef: string }> = {
+      const response = {
         success: true,
         message: 'Chapa payment initiated successfully',
         data: {
@@ -252,7 +240,7 @@ export const createChapaPayment = async (req: any, res: Response): Promise<void>
   }
 };
 
-export const verifyChapaPayment = async (req: any, res: Response): Promise<void> => {
+const verifyChapaPayment = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -272,21 +260,20 @@ export const verifyChapaPayment = async (req: any, res: Response): Promise<void>
       return;
     }
 
-
-    const chapaResponse = await (globalThis as any).fetch(`${CHAPA_BASE_URL}/transaction/verify/${txRef}`, {
+    const chapaResponse = await fetch(`${CHAPA_BASE_URL}/transaction/verify/${txRef}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${CHAPA_SECRET_KEY}`
       }
     });
 
-    const chapaData = await chapaResponse.json() as any;
+    const chapaData = await chapaResponse.json();
 
     if (chapaData.status === 'success' && chapaData.data.status === 'success') {
       const meta = chapaData.data.meta;
       const planId = meta?.planId;
 
-      if (!planId || !SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS]) {
+      if (!planId || !SUBSCRIPTION_PLANS[planId]) {
         res.status(400).json({
           success: false,
           message: 'Invalid plan ID'
@@ -294,32 +281,28 @@ export const verifyChapaPayment = async (req: any, res: Response): Promise<void>
         return;
       }
 
-   
       const existingSubscription = await Subscription.findOne({ userId: req.user._id });
       if (existingSubscription) {
-
         existingSubscription.plan = planId;
         existingSubscription.status = 'active';
         existingSubscription.chapaTxRef = txRef;
-        existingSubscription.renewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        existingSubscription.renewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await existingSubscription.save();
       } else {
- 
         const subscription = new Subscription({
           userId: req.user._id,
           plan: planId,
           status: 'active',
           chapaTxRef: txRef,
-          renewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+          renewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         });
         await subscription.save();
       }
 
-
       await User.findByIdAndUpdate(req.user._id, { subscriptionPlan: planId });
 
-      const plan = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS];
-      const response: IApiResponse<ISubscriptionResponse> = {
+      const plan = SUBSCRIPTION_PLANS[planId];
+      const response = {
         success: true,
         message: 'Subscription activated successfully',
         data: {
@@ -353,7 +336,7 @@ export const verifyChapaPayment = async (req: any, res: Response): Promise<void>
   }
 };
 
-export const createSubscription = async (req: any, res: Response): Promise<void> => {
+const createSubscription = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -365,7 +348,7 @@ export const createSubscription = async (req: any, res: Response): Promise<void>
 
     const { plan } = req.body;
 
-    if (!SUBSCRIPTION_PLANS[plan as keyof typeof SUBSCRIPTION_PLANS]) {
+    if (!SUBSCRIPTION_PLANS[plan]) {
       res.status(400).json({
         success: false,
         message: 'Invalid subscription plan'
@@ -382,7 +365,6 @@ export const createSubscription = async (req: any, res: Response): Promise<void>
       return;
     }
 
-    // For Free plan, create subscription without payment
     if (plan === 'Free') {
       const subscription = new Subscription({
         userId: req.user._id,
@@ -392,10 +374,9 @@ export const createSubscription = async (req: any, res: Response): Promise<void>
 
       await subscription.save();
 
-      // Update user's subscription plan
       await User.findByIdAndUpdate(req.user._id, { subscriptionPlan: 'Free' });
 
-      const response: IApiResponse<ISubscriptionResponse> = {
+      const response = {
         success: true,
         message: 'Free subscription created successfully',
         data: {
@@ -406,7 +387,7 @@ export const createSubscription = async (req: any, res: Response): Promise<void>
           amount: 0,
           currency: 'ETB',
           features: SUBSCRIPTION_PLANS.Free.features
-        }as any
+        }
       };
 
       res.json(response);
@@ -426,7 +407,7 @@ export const createSubscription = async (req: any, res: Response): Promise<void>
   }
 };
 
-export const getCurrentSubscription = async (req: any, res: Response): Promise<void> => {
+const getCurrentSubscription = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -446,8 +427,7 @@ export const getCurrentSubscription = async (req: any, res: Response): Promise<v
       return;
     }
 
-    const planConfig = SUBSCRIPTION_PLANS[subscription.plan as keyof typeof SUBSCRIPTION_PLANS];
-
+    const planConfig = SUBSCRIPTION_PLANS[subscription.plan];
 
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -463,7 +443,7 @@ export const getCurrentSubscription = async (req: any, res: Response): Promise<v
       createdAt: { $gte: startOfMonth, $lte: endOfMonth }
     });
 
-    const response: IApiResponse<ISubscriptionResponse> = {
+    const response = {
       success: true,
       message: 'Subscription retrieved successfully',
       data: {
@@ -491,7 +471,7 @@ export const getCurrentSubscription = async (req: any, res: Response): Promise<v
   }
 };
 
-export const cancelSubscription = async (req: any, res: Response): Promise<void> => {
+const cancelSubscription = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -511,16 +491,14 @@ export const cancelSubscription = async (req: any, res: Response): Promise<void>
       return;
     }
 
- 
     subscription.plan = 'Free';
     subscription.status = 'active';
     subscription.renewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); 
     await subscription.save();
 
-
     await User.findByIdAndUpdate(req.user._id, { subscriptionPlan: 'Free' });
 
-    const response: IApiResponse = {
+    const response = {
       success: true,
       message: 'Subscription canceled and downgraded to Free plan'
     };
@@ -534,8 +512,7 @@ export const cancelSubscription = async (req: any, res: Response): Promise<void>
   }
 };
 
-
-export const handleChapaWebhook = async (req: Request, res: Response): Promise<void> => {
+const handleChapaWebhook = async (req, res) => {
   try {
     console.log('Chapa webhook received:', JSON.stringify(req.body, null, 2));
     
@@ -554,16 +531,14 @@ export const handleChapaWebhook = async (req: Request, res: Response): Promise<v
 
       console.log('Processing successful payment for user:', userId, 'plan:', planId);
 
-
       const subscription = await Subscription.findOne({ userId });
       if (subscription) {
         subscription.status = 'active';
         subscription.plan = planId;
         subscription.chapaTxRef = tx_ref;
-        subscription.renewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        subscription.renewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await subscription.save();
 
- 
         await User.findByIdAndUpdate(userId, { subscriptionPlan: planId });
         
         console.log('Subscription activated successfully for user:', userId);
@@ -582,4 +557,14 @@ export const handleChapaWebhook = async (req: Request, res: Response): Promise<v
       message: 'Webhook processing failed'
     });
   }
+};
+
+module.exports = {
+  getSubscriptionPlans,
+  createChapaPayment,
+  verifyChapaPayment,
+  createSubscription,
+  getCurrentSubscription,
+  cancelSubscription,
+  handleChapaWebhook
 };

@@ -1,20 +1,27 @@
-import { Router } from 'express';
-import passport from 'passport';
-import { register, login, logout, getCurrentUser, googleAuthCallback, forgotPassword, resetPassword } from '../controllers/authController';
+const express = require('express');
+const passport = require('passport');
+const { 
+  register, 
+  login, 
+  logout, 
+  getCurrentUser, 
+  googleAuthCallback, 
+  forgotPassword, 
+  resetPassword 
+} = require('../controllers/authController');
+const { validateRegister, validateLogin } = require('../middleware/validation');
+const { auth } = require('../middleware/auth');
 
-import { auth } from '../middleware/auth';
+const router = express.Router();
 
-const router = Router();
-
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', validateRegister, register);
+router.post('/login', validateLogin, login);
 router.post('/logout', logout);
-router.get('/me', auth as any, getCurrentUser);
-router.post('/forgot-password', forgotPassword)
+router.get('/me', auth, getCurrentUser);
+router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
- 
   router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
   router.get('/google/callback', 
@@ -22,7 +29,6 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     googleAuthCallback
   );
 } else {
-
   router.get('/google', (req, res) => {
     res.status(400).json({
       success: false,
@@ -38,4 +44,4 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   });
 }
 
-export default router;
+module.exports = router;

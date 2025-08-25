@@ -1,34 +1,28 @@
-import { Response } from 'express';
-import { Invoice } from '../models/Invoice';
-import { User } from '../models/User';
-import { Subscription } from '../models/Subscription';
-import { IAuthRequest, IInvoiceResponse, IInvoiceUploadResponse, IApiResponse } from '../types';
-import Tesseract from 'tesseract.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import pdf from 'pdf-parse';
+const { Invoice } = require('../models/Invoice');
+const { User } = require('../models/User');
+const { Subscription } = require('../models/Subscription');
+const Tesseract = require('tesseract.js');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const pdf = require('pdf-parse');
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-
-const fallbackData: IInvoiceUploadResponse = {
+const fallbackData = {
   vendor: 'Unknown Vendor',
   date: new Date().toISOString().split('T')[0], 
   amount: 0.00,
   taxId: 'N/A'
 };
 
-
-async function extractTextFromFile(fileBuffer: Buffer, mimeType: string): Promise<string> {
+async function extractTextFromFile(fileBuffer, mimeType) {
   try {
-
     if (mimeType === 'application/pdf') {
       console.log('Processing PDF file...');
       const data = await pdf(fileBuffer);
       return data.text;
     }
     
- 
     if (mimeType.startsWith('image/')) {
       console.log('Processing image file with OCR...');
       const result = await Tesseract.recognize(
@@ -41,7 +35,6 @@ async function extractTextFromFile(fileBuffer: Buffer, mimeType: string): Promis
       return result.data.text;
     }
     
-
     if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) {
       console.log('Processing Excel file...');
       return 'Excel file detected - using fallback data extraction';
@@ -54,14 +47,12 @@ async function extractTextFromFile(fileBuffer: Buffer, mimeType: string): Promis
   }
 }
 
-
-async function extractInvoiceDataWithGemini(extractedText: string): Promise<IInvoiceUploadResponse> {
+async function extractInvoiceDataWithGemini(extractedText) {
   try {
     if (!process.env.GEMINI_API_KEY) {
       console.warn('GEMINI_API_KEY not found, using fallback data');
       return fallbackData;
     }
-
 
     const modelNames = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
     let model;
@@ -111,9 +102,7 @@ async function extractInvoiceDataWithGemini(extractedText: string): Promise<IInv
     const response = await result.response;
     const text = response.text();
     
-
     try {
-
       let cleanText = text.trim();
 
       if (cleanText.startsWith('```json')) {
@@ -122,7 +111,6 @@ async function extractInvoiceDataWithGemini(extractedText: string): Promise<IInv
         cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
       
- 
       cleanText = cleanText.trim();
       
       console.log('Cleaned Gemini response:', cleanText);
@@ -145,12 +133,10 @@ async function extractInvoiceDataWithGemini(extractedText: string): Promise<IInv
   }
 }
 
-
-function extractInvoiceDataWithRegex(extractedText: string): IInvoiceUploadResponse {
+function extractInvoiceDataWithRegex(extractedText) {
   try {
     console.log('Using regex extraction for text:', extractedText.substring(0, 300) + '...');
     
-  
     const vendorPatterns = [
       /vendor:\s*([A-Za-z0-9\s&.,'-]+)/i,
       /(?:from|vendor|company|issued by|bill from|business name):\s*([A-Za-z0-9\s&.,'-]+)/i,
@@ -167,7 +153,6 @@ function extractInvoiceDataWithRegex(extractedText: string): IInvoiceUploadRespo
         break;
       }
     }
-
 
     const datePatterns = [
       /invoice_date:\s*([A-Za-z]+\s+[A-Za-z]+\s+\d{1,2}\s+\d{4})/i,
@@ -215,7 +200,6 @@ function extractInvoiceDataWithRegex(extractedText: string): IInvoiceUploadRespo
         break;
       }
     }
-
     
     const amountPatterns = [
       /total_amount:\s*([\d,]+\.?\d*)/i,
@@ -233,7 +217,6 @@ function extractInvoiceDataWithRegex(extractedText: string): IInvoiceUploadRespo
       }
     }
 
- 
     const taxIdPatterns = [
       /invoiced_number:\s*([A-Z0-9\-]+)/i,
       /(?:tax id|vat|tax number|ein):\s*([A-Z0-9\-]+)/i,
@@ -263,7 +246,7 @@ function extractInvoiceDataWithRegex(extractedText: string): IInvoiceUploadRespo
   }
 }
 
-export const getInvoices = async (req: any, res: Response): Promise<void> => {
+const getInvoices = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -272,9 +255,9 @@ export const getInvoices = async (req: any, res: Response): Promise<void> => {
 
     const invoices = await Invoice.find({ userId: req.user._id }).sort({ createdAt: -1 });
     
-    const formattedInvoices: IInvoiceResponse[] = invoices.map(invoice => ({
+    const formattedInvoices = invoices.map(invoice => ({
       id: invoice._id.toString(),
-      userId: req.user!._id.toString(),
+      userId: req.user._id.toString(),
       vendor: invoice.vendor,
       date: invoice.date,
       amount: invoice.amount,
@@ -282,7 +265,7 @@ export const getInvoices = async (req: any, res: Response): Promise<void> => {
       fileUrl: invoice.fileUrl
     }));
 
-    const response: IApiResponse<IInvoiceResponse[]> = {
+    const response = {
       success: true,
       message: 'Invoices retrieved successfully',
       data: formattedInvoices
@@ -294,15 +277,12 @@ export const getInvoices = async (req: any, res: Response): Promise<void> => {
   }
 };
 
-
-async function checkUploadLimit(userId: string): Promise<{ allowed: boolean; message?: string; limit?: number; used?: number; remaining?: number }> {
+async function checkUploadLimit(userId) {
   try {
-
     const user = await User.findById(userId);
     if (!user) {
       return { allowed: false, message: 'User not found' };
     }
-
 
     const subscription = await Subscription.findOne({ userId });
     if (!subscription) {
@@ -326,7 +306,7 @@ async function checkUploadLimit(userId: string): Promise<{ allowed: boolean; mes
       };
     }
 
-        const currentMonth = new Date();
+    const currentMonth = new Date();
     currentMonth.setDate(1);
     currentMonth.setHours(0, 0, 0, 0);
     
@@ -335,21 +315,20 @@ async function checkUploadLimit(userId: string): Promise<{ allowed: boolean; mes
       createdAt: { $gte: currentMonth }
     });
 
-    let uploadLimit: number;
+    let uploadLimit;
     switch (subscription.plan) {
       case 'Free':
         uploadLimit = 5;
         break;
       case 'Pro':
       case 'Business':
-        uploadLimit = -1; //
+        uploadLimit = -1; // Unlimited
         break;
       default:
         uploadLimit = 5; 
     }
 
     if (uploadLimit === -1) {
-      
       return {
         allowed: true,
         limit: -1,
@@ -373,7 +352,7 @@ async function checkUploadLimit(userId: string): Promise<{ allowed: boolean; mes
   }
 }
 
-export const uploadInvoice = async (req: any, res: Response): Promise<void> => {
+const uploadInvoice = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -401,7 +380,7 @@ export const uploadInvoice = async (req: any, res: Response): Promise<void> => {
 
     console.log('Processing uploaded file:', req.file.originalname, 'Type:', req.file.mimetype);
 
-    let extractedText: string;
+    let extractedText;
     try {
       extractedText = await extractTextFromFile(req.file.buffer, req.file.mimetype);
       console.log('Extracted text length:', extractedText.length);
@@ -416,8 +395,7 @@ export const uploadInvoice = async (req: any, res: Response): Promise<void> => {
       return;
     }
 
-
-    let extractedData: IInvoiceUploadResponse;
+    let extractedData;
     try {
       extractedData = await extractInvoiceDataWithGemini(extractedText);
       console.log('Gemini extraction result:', extractedData);
@@ -427,11 +405,9 @@ export const uploadInvoice = async (req: any, res: Response): Promise<void> => {
       console.log('Regex extraction result:', extractedData);
     }
 
-
     const fileUrl = `/uploads/${req.file.filename}`;
     
-
-    const response: IApiResponse<IInvoiceUploadResponse & { fileUrl: string }> = {
+    const response = {
       success: true,
       message: 'Invoice data extracted successfully. Please review and save.',
       data: {
@@ -446,14 +422,13 @@ export const uploadInvoice = async (req: any, res: Response): Promise<void> => {
   }
 };
 
-export const createInvoice = async (req: any, res: Response): Promise<void> => {
+const createInvoice = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({ success: false, message: 'User not authenticated' });
       return;
     }
 
-    
     const limitCheck = await checkUploadLimit(req.user._id.toString());
     if (!limitCheck.allowed) {
       res.status(403).json({ 
@@ -470,7 +445,6 @@ export const createInvoice = async (req: any, res: Response): Promise<void> => {
 
     const { vendor, date, amount, taxId, fileUrl } = req.body;
     
-  
     const finalFileUrl = fileUrl || '';
     
     const invoice = new Invoice({
@@ -483,7 +457,7 @@ export const createInvoice = async (req: any, res: Response): Promise<void> => {
     });
     await invoice.save();
 
-    const formattedInvoice: IInvoiceResponse = {
+    const formattedInvoice = {
       id: invoice._id.toString(),
       userId: req.user._id.toString(),
       vendor: invoice.vendor,
@@ -493,7 +467,7 @@ export const createInvoice = async (req: any, res: Response): Promise<void> => {
       fileUrl: invoice.fileUrl
     };
 
-    const response: IApiResponse<IInvoiceResponse> = {
+    const response = {
       success: true,
       message: 'Invoice created successfully',
       data: formattedInvoice
@@ -505,7 +479,7 @@ export const createInvoice = async (req: any, res: Response): Promise<void> => {
   }
 };
 
-export const updateInvoice = async (req: any, res: Response): Promise<void> => {
+const updateInvoice = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -526,7 +500,7 @@ export const updateInvoice = async (req: any, res: Response): Promise<void> => {
       return;
     }
 
-    const formattedInvoice: IInvoiceResponse = {
+    const formattedInvoice = {
       id: invoice._id.toString(),
       userId: req.user._id.toString(),
       vendor: invoice.vendor,
@@ -536,7 +510,7 @@ export const updateInvoice = async (req: any, res: Response): Promise<void> => {
       fileUrl: invoice.fileUrl
     };
 
-    const response: IApiResponse<IInvoiceResponse> = {
+    const response = {
       success: true,
       message: 'Invoice updated successfully',
       data: formattedInvoice
@@ -548,7 +522,7 @@ export const updateInvoice = async (req: any, res: Response): Promise<void> => {
   }
 };
 
-export const deleteInvoice = async (req: any, res: Response): Promise<void> => {
+const deleteInvoice = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -563,7 +537,7 @@ export const deleteInvoice = async (req: any, res: Response): Promise<void> => {
       return;
     }
 
-    const response: IApiResponse = {
+    const response = {
       success: true,
       message: 'Invoice deleted successfully'
     };
@@ -572,4 +546,12 @@ export const deleteInvoice = async (req: any, res: Response): Promise<void> => {
     console.error('Error deleting invoice:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
+};
+
+module.exports = {
+  getInvoices,
+  uploadInvoice,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice
 };

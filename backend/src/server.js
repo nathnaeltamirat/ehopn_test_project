@@ -1,12 +1,12 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import path from 'path';
-import dotenv from 'dotenv';
-import session from 'express-session';
-import multer from 'multer';
-import fs from 'fs';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const path = require('path');
+const dotenv = require('dotenv');
+const session = require('express-session');
+const multer = require('multer');
+const fs = require('fs');
 
 const envPath = path.join(process.cwd(), '.env');
 console.log('🔍 Looking for .env file at:', envPath);
@@ -19,15 +19,13 @@ console.log('🔍 GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? '�
 console.log('🔍 EMAIL_USER:', process.env.EMAIL_USER ? '✅ Loaded' : '❌ Not found');
 console.log('🔍 EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? '✅ Loaded' : '❌ Not found');
 
+const passport = require('./config/passport');
+const authRoutes = require('./routes/auth');
+const invoiceRoutes = require('./routes/invoices');
+const subscriptionRoutes = require('./routes/subscription');
+const userRoutes = require('./routes/user');
 
-import passport from './config/passport';
-import authRoutes from './routes/auth';
-import invoiceRoutes from './routes/invoices';
-import subscriptionRoutes from './routes/subscription';
-import userRoutes from './routes/user';
-
-
-import { connectDB } from './config/database';
+const { connectDB } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,7 +50,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-
 app.use(session({
   secret: process.env.JWT_SECRET || 'fallback-secret',
   resave: false,
@@ -63,19 +60,15 @@ app.use(session({
   }
 }));
 
-
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-
 app.use('/subscription/webhook', express.raw({ type: 'application/json' }));
 
-
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-
 
 app.get('/health', (req, res) => {
   res.json({
@@ -91,8 +84,7 @@ app.use('/invoices', invoiceRoutes);
 app.use('/subscription', subscriptionRoutes);
 app.use('/user', userRoutes);
 
-
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err, req, res, next) => {
   console.error('Error:', err);
 
   if (err instanceof multer.MulterError) {
@@ -123,7 +115,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
@@ -131,17 +122,14 @@ app.use('*', (req, res) => {
   });
 });
 
-
 const startServer = async () => {
   try {
-
     await connectDB();
 
     const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
-
 
     app.listen(PORT, () => {
       console.log(` Server running on port ${PORT}`);
@@ -153,7 +141,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);

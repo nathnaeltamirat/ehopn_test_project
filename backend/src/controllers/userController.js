@@ -1,11 +1,9 @@
-import { Response } from 'express';
-import bcrypt from 'bcryptjs';
-import { User } from '../models/User';
-import { Subscription } from '../models/Subscription';
-import { Invoice } from '../models/Invoice';
-import { IAuthRequest, IApiResponse, IUserResponse } from '../types';
+const bcrypt = require('bcryptjs');
+const { User } = require('../models/User');
+const { Subscription } = require('../models/Subscription');
+const { Invoice } = require('../models/Invoice');
 
-export const updateUserLanguage = async (req: any, res: Response): Promise<void> => {
+const updateUserLanguage = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -17,7 +15,6 @@ export const updateUserLanguage = async (req: any, res: Response): Promise<void>
 
     const { language } = req.body;
 
-   
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { language },
@@ -32,7 +29,7 @@ export const updateUserLanguage = async (req: any, res: Response): Promise<void>
       return;
     }
 
-    const response: IApiResponse = {
+    const response = {
       success: true,
       message: 'Language updated successfully'
     };
@@ -47,7 +44,7 @@ export const updateUserLanguage = async (req: any, res: Response): Promise<void>
   }
 };
 
-export const updateUserProfile = async (req: any, res: Response): Promise<void> => {
+const updateUserProfile = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -84,7 +81,7 @@ export const updateUserProfile = async (req: any, res: Response): Promise<void> 
       return;
     }
 
-    const formattedUser: IUserResponse = {
+    const formattedUser = {
       id: updatedUser._id.toString(),
       name: updatedUser.name,
       email: updatedUser.email,
@@ -92,7 +89,7 @@ export const updateUserProfile = async (req: any, res: Response): Promise<void> 
       subscriptionPlan: updatedUser.subscriptionPlan
     };
 
-    const response: IApiResponse<IUserResponse> = {
+    const response = {
       success: true,
       message: 'Profile updated successfully',
       data: formattedUser
@@ -108,7 +105,7 @@ export const updateUserProfile = async (req: any, res: Response): Promise<void> 
   }
 };
 
-export const changePassword = async (req: any, res: Response): Promise<void> => {
+const changePassword = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -120,7 +117,6 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
 
     const { currentPassword, newPassword } = req.body;
 
-
     const user = await User.findById(req.user._id);
     if (!user) {
       res.status(404).json({
@@ -129,7 +125,6 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
       });
       return;
     }
-
 
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isCurrentPasswordValid) {
@@ -140,14 +135,13 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
       return;
     }
 
-
     const saltRounds = 12;
     const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
 
     user.passwordHash = newPasswordHash;
     await user.save();
 
-    const response: IApiResponse = {
+    const response = {
       success: true,
       message: 'Password changed successfully'
     };
@@ -162,7 +156,7 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
   }
 };
 
-export const deleteAccount = async (req: any, res: Response): Promise<void> => {
+const deleteAccount = async (req, res) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -182,7 +176,6 @@ export const deleteAccount = async (req: any, res: Response): Promise<void> => {
       return;
     }
 
-
     const user = await User.findById(req.user._id);
     if (!user) {
       res.status(404).json({
@@ -201,15 +194,13 @@ export const deleteAccount = async (req: any, res: Response): Promise<void> => {
       return;
     }
 
-  
     await Promise.all([
-
       Invoice.deleteMany({ userId: req.user._id }),
       Subscription.deleteMany({ userId: req.user._id }),
       User.findByIdAndDelete(req.user._id)
     ]);
 
-    const response: IApiResponse = {
+    const response = {
       success: true,
       message: 'Account deleted successfully'
     };
@@ -222,4 +213,11 @@ export const deleteAccount = async (req: any, res: Response): Promise<void> => {
       message: 'Internal server error'
     });
   }
+};
+
+module.exports = {
+  updateUserLanguage,
+  updateUserProfile,
+  changePassword,
+  deleteAccount
 };

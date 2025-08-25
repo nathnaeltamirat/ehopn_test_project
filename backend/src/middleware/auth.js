@@ -1,17 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
-import { IAuthRequest, IUser } from '../types';
+const jwt = require('jsonwebtoken');
+const { User } = require('../models/User');
 
-export interface JWTPayload {
-  userId: string;
-  email: string;
-  role: string;
-}
-
-export const auth = async (req: IAuthRequest, res: Response, next: NextFunction): Promise<void> => {
+const auth = async (req, res, next) => {
   try {
-    const token = (req as any).header('Authorization')?.replace('Bearer ', '');
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
       res.status(401).json({
@@ -21,7 +13,7 @@ export const auth = async (req: IAuthRequest, res: Response, next: NextFunction)
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-passwordHash');
 
     if (!user) {
@@ -42,7 +34,7 @@ export const auth = async (req: IAuthRequest, res: Response, next: NextFunction)
   }
 };
 
-export const adminAuth = async (req: IAuthRequest, res: Response, next: NextFunction): Promise<void> => {
+const adminAuth = async (req, res, next) => {
   try {
     await auth(req, res, () => {
       if (req.user?.role !== 'admin') {
@@ -61,3 +53,5 @@ export const adminAuth = async (req: IAuthRequest, res: Response, next: NextFunc
     });
   }
 };
+
+module.exports = { auth, adminAuth };

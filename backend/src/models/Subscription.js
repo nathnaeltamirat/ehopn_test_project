@@ -1,13 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { ISubscription } from '../types';
+const mongoose = require('mongoose');
 
-export interface ISubscriptionDocument extends Omit<ISubscription, '_id'>, Document {
-  chapaTxRef?: string;
-}
-
-const SubscriptionSchema = new Schema<ISubscriptionDocument>({
+const SubscriptionSchema = new mongoose.Schema({
   userId: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'User ID is required'],
     unique: true,
@@ -56,4 +51,6 @@ SubscriptionSchema.index({ userId: 1 });
 SubscriptionSchema.index({ status: 1 });
 SubscriptionSchema.index({ renewDate: 1 });
 
-export const Subscription = mongoose.model<ISubscriptionDocument>('Subscription', SubscriptionSchema);
+const Subscription = mongoose.model('Subscription', SubscriptionSchema);
+
+module.exports = { Subscription };
