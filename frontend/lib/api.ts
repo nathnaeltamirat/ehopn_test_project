@@ -1,5 +1,5 @@
 // API service layer for backend integration
-const API_BASE_URL = 'https://ehopn-test-project.onrender.com'
+const API_BASE_URL = 'https://ehopn-test-project.onrender.com/api'
 
 // Types matching backend interfaces
 export interface User {
