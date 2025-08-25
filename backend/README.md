@@ -1,21 +1,27 @@
 # EHopN Backend
 
-Express.js backend with TypeScript and MongoDB for the EHopN invoice management system.
+Express.js backend with JavaScript and MongoDB for the EHopN invoice management system.
 
 ## 🚀 Features
 
 - **Authentication**: JWT-based authentication with bcrypt password hashing
+- **Google OAuth**: Social login integration with Passport.js
 - **Invoice Management**: CRUD operations for invoices with file upload support
-- **Subscription Management**: Stripe integration for subscription handling
-- **File Upload**: Support for PDF, images, and Excel files with OCR simulation
+- **OCR Processing**: Tesseract.js for text extraction from images
+- **AI Integration**: Google Generative AI for enhanced data extraction
+- **Subscription Management**: Chapa payment gateway integration
+- **File Upload**: Support for PDF, images, and Excel files
+- **Email Service**: Nodemailer for welcome and password reset emails
 - **Security**: Helmet, CORS, rate limiting, and input validation
-- **TypeScript**: Full TypeScript support with strict type checking
+- **JavaScript**: Full JavaScript implementation for better deployment compatibility
 
 ## 📋 Prerequisites
 
 - Node.js (v16 or higher)
 - MongoDB (local or Atlas)
-- Stripe account (for subscription features)
+- Google Cloud Console account (for OAuth)
+- Chapa account (for payments)
+- Google AI API key (for AI features)
 
 ## 🛠️ Installation
 
@@ -32,26 +38,43 @@ Express.js backend with TypeScript and MongoDB for the EHopN invoice management 
 
 3. **Set up environment variables**
    ```bash
-   cp env.example .env
+   cp .env.example .env
    ```
    
    Edit `.env` with your configuration:
    ```env
+   # Server Configuration
    PORT=5000
    NODE_ENV=development
-   FRONTEND_URL=http://localhost:3000
+   
+   # URLs
+   BACKEND_URL=https://ehopn-test-project.onrender.com
+   FRONTEND_URL=https://ehopn-test-project.vercel.app
+   
+   # Database Configuration
    MONGODB_URI=mongodb://localhost:27017/ehopn_db
+   
+   # JWT Authentication
    JWT_SECRET=your_super_secret_jwt_key_here
-   STRIPE_SECRET=sk_test_your_stripe_secret_key
-   STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
+   
+   # Google OAuth
+   GOOGLE_CLIENT_ID=your_google_client_id_here
+   GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+   
+   # Chapa Payment Gateway
+   CHAPA_SECRET_KEY=your_chapa_secret_key_here
+   CHAPA_PUBLIC_KEY=your_chapa_public_key_here
+   CHAPA_ENCRYPTION_KEY=your_chapa_encryption_key_here
+   
+   # Google AI (Gemini)
+   GEMINI_API_KEY=your_gemini_api_key_here
+   
+   # Email Configuration (Optional)
+   EMAIL_USER=your_email_here@gmail.com
+   EMAIL_PASSWORD=your_email_app_password_here
    ```
 
-4. **Build the project**
-   ```bash
-   npm run build
-   ```
-
-5. **Start the server**
+4. **Start the server**
    ```bash
    # Development mode
    npm run dev
@@ -66,52 +89,67 @@ Express.js backend with TypeScript and MongoDB for the EHopN invoice management 
 backend/
 ├── src/
 │   ├── config/
-│   │   └── database.ts          # MongoDB connection
+│   │   ├── database.js          # MongoDB connection
+│   │   └── passport.js          # Google OAuth configuration
 │   ├── controllers/
-│   │   ├── authController.ts    # Authentication logic
-│   │   ├── invoiceController.ts # Invoice CRUD operations
-│   │   └── subscriptionController.ts # Subscription management
+│   │   ├── authController.js    # Authentication logic
+│   │   ├── invoiceController.js # Invoice CRUD operations
+│   │   ├── subscriptionController.js # Subscription management
+│   │   └── userController.js    # User profile management
 │   ├── middleware/
-│   │   ├── auth.ts             # JWT authentication
-│   │   └── validation.ts       # Input validation
+│   │   ├── auth.js             # JWT authentication
+│   │   └── validation.js       # Input validation
 │   ├── models/
-│   │   ├── User.ts             # User model
-│   │   ├── Invoice.ts          # Invoice model
-│   │   └── Subscription.ts     # Subscription model
+│   │   ├── User.js             # User model
+│   │   ├── Invoice.js          # Invoice model
+│   │   └── Subscription.js     # Subscription model
 │   ├── routes/
-│   │   ├── auth.ts             # Authentication routes
-│   │   ├── invoices.ts         # Invoice routes
-│   │   └── subscription.ts     # Subscription routes
-│   ├── types/
-│   │   └── index.ts            # TypeScript type definitions
-│   └── server.ts               # Main server file
+│   │   ├── auth.js             # Authentication routes
+│   │   ├── invoices.js         # Invoice routes
+│   │   ├── subscription.js     # Subscription routes
+│   │   └── user.js             # User routes
+│   └── utils/
+│       └── emailService.js     # Email service with Nodemailer
 ├── uploads/                    # File upload directory
+├── server.js                   # Main server file
 ├── package.json
-├── tsconfig.json
 └── README.md
 ```
 
 ## 🔌 API Endpoints
 
-### Authentication (`/auth`)
+### Authentication (`/api/auth`)
 
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `GET /auth/me` - Get current user info
+- `POST /register` - Register new user
+- `POST /login` - User login
+- `POST /logout` - User logout
+- `GET /me` - Get current user info
+- `POST /forgot-password` - Request password reset
+- `POST /reset-password` - Reset password with token
+- `GET /google` - Google OAuth login
+- `GET /google/callback` - Google OAuth callback
 
-### Invoices (`/invoices`)
+### Invoices (`/api/invoices`)
 
-- `GET /invoices` - Get user's invoices
-- `POST /invoices/upload` - Upload and process invoice file
-- `PUT /invoices/:id` - Update invoice
-- `DELETE /invoices/:id` - Delete invoice
+- `GET /` - Get user's invoices
+- `POST /` - Create new invoice
+- `POST /upload` - Upload and process invoice file with OCR
+- `PUT /:id` - Update invoice
+- `DELETE /:id` - Delete invoice
 
-### Subscriptions (`/subscription`)
+### Subscriptions (`/api/subscription`)
 
-- `POST /subscription/create` - Create new subscription
-- `GET /subscription/me` - Get current subscription
-- `POST /subscription/webhook` - Stripe webhook handler
+- `GET /plans` - Get available subscription plans
+- `GET /me` - Get current subscription
+- `POST /create` - Create new subscription with Chapa
+- `POST /verify` - Verify Chapa payment
+- `POST /cancel` - Cancel subscription
+- `POST /webhook` - Chapa webhook handler
+
+### User (`/api/user`)
+
+- `PUT /language` - Update user language preference
+- `PUT /profile` - Update user profile
 
 ## 🔐 Authentication
 
@@ -121,25 +159,37 @@ All protected routes require a JWT token in the Authorization header:
 Authorization: Bearer <your-jwt-token>
 ```
 
+### Google OAuth Flow
+
+1. User clicks "Sign in with Google" on frontend
+2. Frontend redirects to `/api/auth/google`
+3. User authenticates with Google
+4. Google redirects to `/api/auth/google/callback`
+5. Backend creates/updates user and returns JWT token
+6. Frontend receives token and logs user in
+
 ## 📊 Database Models
 
 ### User
-```typescript
+```javascript
 {
   _id: ObjectId,
   name: string,
-  email: string,
+  email: string (unique),
   passwordHash: string,
   language: 'en' | 'de' | 'ar',
   role: 'user' | 'admin',
   subscriptionPlan: 'Free' | 'Pro' | 'Business',
+  googleId: string (optional),
+  resetToken: string (optional),
+  resetTokenExpires: Date (optional),
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
 ### Invoice
-```typescript
+```javascript
 {
   _id: ObjectId,
   userId: ObjectId,
@@ -148,20 +198,21 @@ Authorization: Bearer <your-jwt-token>
   amount: string,
   taxId: string,
   fileUrl: string,
+  extractedData: object (optional),
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
 ### Subscription
-```typescript
+```javascript
 {
   _id: ObjectId,
   userId: ObjectId,
   plan: 'Free' | 'Pro' | 'Business',
-  status: 'active' | 'canceled',
+  status: 'active' | 'pending' | 'canceled',
   renewDate: Date,
-  stripeSubscriptionId?: string,
+  chapaTxRef: string (optional),
   createdAt: Date,
   updatedAt: Date
 }
@@ -175,11 +226,18 @@ Authorization: Bearer <your-jwt-token>
 |----------|-------------|----------|
 | `PORT` | Server port | No (default: 5000) |
 | `NODE_ENV` | Environment | No (default: development) |
-| `FRONTEND_URL` | Frontend URL for CORS | No (default: http://localhost:3000) |
+| `BACKEND_URL` | Backend URL for OAuth | Yes |
+| `FRONTEND_URL` | Frontend URL for CORS | Yes |
 | `MONGODB_URI` | MongoDB connection string | Yes |
 | `JWT_SECRET` | JWT signing secret | Yes |
-| `STRIPE_SECRET` | Stripe secret key | Yes |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Yes |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes |
+| `CHAPA_SECRET_KEY` | Chapa secret key | Yes |
+| `CHAPA_PUBLIC_KEY` | Chapa public key | Yes |
+| `CHAPA_ENCRYPTION_KEY` | Chapa encryption key | Yes |
+| `GEMINI_API_KEY` | Google AI API key | Yes |
+| `EMAIL_USER` | Gmail address | No |
+| `EMAIL_PASSWORD` | Gmail app password | No |
 
 ### MongoDB Setup
 
@@ -199,10 +257,18 @@ MONGODB_URI=mongodb://localhost:27017/ehopn_db
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ehopn_db?retryWrites=true&w=majority
 ```
 
-### Stripe Setup
+### Google OAuth Setup
 
-1. Create a Stripe account
-2. Get your API keys from the Stripe dashboard
+1. Create a project in Google Cloud Console
+2. Enable Google+ API
+3. Create OAuth 2.0 credentials
+4. Add authorized redirect URI: `https://ehopn-test-project.onrender.com/api/auth/google/callback`
+5. Update environment variables with credentials
+
+### Chapa Payment Setup
+
+1. Create a Chapa account
+2. Get your API keys from the dashboard
 3. Set up webhook endpoints
 4. Update environment variables
 
@@ -212,7 +278,6 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ehopn_db?retryWr
 
 ```bash
 npm run dev      # Start development server with hot reload
-npm run build    # Build TypeScript to JavaScript
 npm start        # Start production server
 npm test         # Run tests
 ```
@@ -224,11 +289,19 @@ The backend supports file uploads for invoices:
 - **Maximum size**: 10MB
 - **Storage**: Local file system (uploads/ directory)
 
-### OCR Simulation
+### OCR Processing
 
-The backend simulates OCR processing for uploaded files:
-- Returns mock extracted data
-- In production, integrate with real OCR services like Tesseract.js
+The backend uses Tesseract.js for OCR processing:
+- Extracts text from uploaded images
+- Processes PDF files
+- Returns structured data for invoice fields
+
+### AI Integration
+
+Google Generative AI enhances data extraction:
+- Improves accuracy of extracted data
+- Validates and corrects OCR results
+- Provides intelligent data processing
 
 ## 🔒 Security Features
 
@@ -238,6 +311,16 @@ The backend simulates OCR processing for uploaded files:
 - **Input Validation**: Request data validation
 - **JWT Authentication**: Secure token-based auth
 - **Password Hashing**: bcrypt for password security
+- **Google OAuth**: Secure social login
+
+## 📧 Email Service
+
+The backend includes email functionality:
+- **Welcome emails**: Sent to new users
+- **Password reset emails**: Secure password recovery
+- **Subscription confirmation**: Plan activation notifications
+
+Email service is optional - if credentials aren't configured, emails are skipped gracefully.
 
 ## 🧪 Testing
 
@@ -253,7 +336,7 @@ npm run test:watch
 
 All API responses follow this format:
 
-```typescript
+```javascript
 {
   success: boolean,
   message: string,
@@ -292,29 +375,36 @@ This backend is designed to work seamlessly with the EHopN frontend. All API res
 
 ### CORS Configuration
 
-The backend is configured to accept requests from the frontend:
-- Development: `http://localhost:3000`
-- Production: Set via `FRONTEND_URL` environment variable
+The backend is configured to accept requests from:
+- Development: `http://localhost:3000`, `http://localhost:3001`
+- Production: Vercel frontend URLs
+- Custom: Set via `FRONTEND_URL` environment variable
 
 ## 📈 Production Deployment
 
-1. **Build the project**
-   ```bash
-   npm run build
-   ```
+### Render Deployment
 
-2. **Set production environment variables**
-   ```bash
-   NODE_ENV=production
-   MONGODB_URI=your_production_mongodb_uri
-   JWT_SECRET=your_production_jwt_secret
-   STRIPE_SECRET=sk_live_your_production_stripe_key
-   ```
+1. **Connect your GitHub repository to Render**
+2. **Set environment variables in Render dashboard**
+3. **Deploy automatically on push to main branch**
 
-3. **Start the server**
-   ```bash
-   npm start
-   ```
+### Environment Variables for Production
+
+```env
+NODE_ENV=production
+BACKEND_URL=https://ehopn-test-project.onrender.com
+FRONTEND_URL=https://ehopn-test-project.vercel.app
+MONGODB_URI=your_production_mongodb_uri
+JWT_SECRET=your_production_jwt_secret
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+CHAPA_SECRET_KEY=your_chapa_secret_key
+CHAPA_PUBLIC_KEY=your_chapa_public_key
+CHAPA_ENCRYPTION_KEY=your_chapa_encryption_key
+GEMINI_API_KEY=your_gemini_api_key
+EMAIL_USER=your_gmail_address (optional)
+EMAIL_PASSWORD=your_gmail_app_password (optional)
+```
 
 ## 🐛 Troubleshooting
 
@@ -330,15 +420,25 @@ The backend is configured to accept requests from the frontend:
    - Check token expiration
    - Verify token format
 
-3. **File Upload Fails**
+3. **Google OAuth Issues**
+   - Verify redirect URI in Google Cloud Console
+   - Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+   - Ensure OAuth is enabled for the project
+
+4. **File Upload Fails**
    - Check file size (max 10MB)
    - Verify file type
    - Ensure uploads directory exists
 
-4. **Stripe Integration Issues**
-   - Verify Stripe keys
-   - Check webhook configuration
-   - Ensure proper event handling
+5. **Chapa Payment Issues**
+   - Verify Chapa credentials
+   - Check webhook URL configuration
+   - Ensure proper currency settings (ETB)
+
+6. **Email Service Issues**
+   - Check EMAIL_USER and EMAIL_PASSWORD
+   - Verify Gmail app password is correct
+   - Ensure 2FA is enabled for Gmail
 
 ## 📄 License
 
@@ -358,3 +458,14 @@ For support and questions:
 - Create an issue in the repository
 - Contact the development team
 - Check the documentation
+
+## 🔄 Recent Updates
+
+- **JavaScript Conversion**: Converted from TypeScript to JavaScript for better deployment compatibility
+- **Google OAuth**: Added social login integration
+- **Chapa Integration**: Replaced Stripe with Chapa payment gateway
+- **OCR Processing**: Added Tesseract.js for text extraction
+- **AI Integration**: Added Google Generative AI for enhanced data processing
+- **Email Service**: Added Nodemailer for transactional emails
+- **Security**: Fixed CORS and localhost references for production
+- **Deployment**: Configured for Render hosting platform
